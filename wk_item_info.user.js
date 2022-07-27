@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.2
+// @version      1.3
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       DeadlyFugu (extended by saraqael)
 // @include     *://www.wanikani.com/radicals/*
@@ -22,6 +22,7 @@ const gradeName = ["一年", "二年", "三年", "四年", "五年", "六年", u
 
 (async () => {
     // get item data from wkof
+    wkof.include('ItemData');
     const itemData = await wkof.ready('ItemData').then(() => wkof.ItemData.get_items());
 
     // find out if page is lesson, review, or word info
