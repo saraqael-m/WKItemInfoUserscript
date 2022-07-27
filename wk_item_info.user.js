@@ -101,9 +101,13 @@ const gradeName = ["一年", "二年", "三年", "四年", "五年", "六年", u
             document.getElementById(itemType == 'r' ? 'information' : 'meaning').before(template.content.firstChild);
         }
     } else { // lesson or review page
-        // put loading and timeout screen above wk info
-        if (pageType === 'lesson') awaitElement('loading-screen').then(e => e.style.zIndex = 10001);
-        else if (pageType === 'review') awaitElement('loading').then(e => e.style.zIndex = 10001);
+        // put loading and timeout screens (and all the others) above info box
+        if (pageType === 'lesson') {
+            awaitElement('loading-screen').then(e => e.style.zIndex = 10001);
+            awaitElement('screen-lesson-done').then(e => e.style.zIndex = 10001);
+            awaitElement('screen-lesson-ready').then(e => e.style.zIndex = 10001); 
+            awaitElement('screen-quiz-ready').then(e => e.style.zIndex = 10001);
+        } else if (pageType === 'review') awaitElement('loading').then(e => e.style.zIndex = 10001);
         awaitElement('timeout').then(e => e.style.zIndex = 10001);
 
         // figure out the details of this sucker
