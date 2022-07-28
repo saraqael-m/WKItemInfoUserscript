@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.4
+// @version      1.5
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
@@ -9,6 +9,7 @@
 // @include     *://www.wanikani.com/vocabulary/*
 // @include     *://www.wanikani.com/lesson/session*
 // @include     *://www.wanikani.com/review/session*
+// @include     *://www.wanikani.com/extra_study/session*
 // @grant        none
 // ==/UserScript==
 
@@ -27,7 +28,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
     const itemData = await wkof.ready('ItemData').then(() => wkof.ItemData.get_items());
 
     // find out if page is lesson, review, or word info
-    const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') ? 'review' : 'info');
+    const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') || window.location.pathname.includes('extra_study') ? 'review' : 'info');
 
     // "await existence of element"-function
     const awaitElement = (id) => new Promise(resolve => { // wait until character element exists
@@ -49,7 +50,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
         var info, grade, top, jlpt, joyo, freq, num, strokes;
         switch (itemType) {
             case 'k': // kanji
-                // get data
+                // get data (from kanjiapi.dev if not available in dict)
                 info = kanjiInfo.hasOwnProperty(itemName) ? kanjiInfo[itemName] : await fetch('https://kanjiapi.dev/v1/kanji/' + itemName).then(e => e.json()).then(e => [e.grade, null, e.jlpt]);
                 grade = info[0] == null ? 'Not taught in schools' : gradeName[info[0] - 1];
                 top = info[1] == null ? 'Not in top 2500' : '#' + info[1];
@@ -76,8 +77,10 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
                 if (jlpt !== undefined) htmlStr += addLine('JLPT', jlpt, infoPage);
                 break;
             case 'r': // radical
+                // radical names to slug
                 const realName = itemData.find(e => e.data.slug == itemName || e.data.characters == itemName).data.characters;
-                if (!radicalInfo.hasOwnProperty(realName)) return null;
+                if (!radicalInfo.hasOwnProperty(realName)) return null; // no information
+                // get data
                 info = radicalInfo[realName];
                 num = info[1] == null ? 'Not numbered' : info[1];
                 top = info[0] == null ? 'Not in top 214' : '#' + info[0];
@@ -104,6 +107,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
             template.innerHTML = '<section id="info" class="remove-margin-bottom"><h2>Information</h2><div style="display: grid;grid-template: 1fr / auto 1fr;">' + htmlStr.replace('bold', 'normal') + '</div></section>';
             document.getElementById(itemType == 'r' ? 'information' : 'meaning').before(template.content.firstChild);
         }
+
     } else { // lesson or review page
         // put loading and timeout screens (and all the others) above info box
         if (pageType === 'lesson') {
@@ -111,7 +115,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
             awaitElement('screen-lesson-done').then(e => e.style.zIndex = 10001);
             awaitElement('screen-lesson-ready').then(e => e.style.zIndex = 10001); 
             awaitElement('screen-quiz-ready').then(e => e.style.zIndex = 10001);
-        } else if (pageType === 'review') awaitElement('loading').then(e => e.style.zIndex = 10001);
+        } else awaitElement('loading').then(e => e.style.zIndex = 10001);
         awaitElement('timeout').then(e => e.style.zIndex = 10001);
 
         // figure out the details of this sucker
@@ -124,29 +128,31 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
 
         // update kanji info box function
         const updateKanjiInfo = async function () {
+            // get item type
             const itemType = pageType === 'lesson' ? characterElement.parentNode.className[0].toLowerCase() : characterElement.className[0].toLowerCase();
             // show info box
             document.getElementById('wk-kanji-info').style.display = 'grid';
-            // get item details (get kanji data from kanjiapi.dev if not in dict)
+            // get item details
             const itemName = pageType === 'lesson' ? characterElement.innerHTML : characterElement.children[0].innerHTML;
             const item = itemData.find(e => e.data.slug == itemName)
-            // add line to info box function
             var htmlStr = '';
-            // add level
+            // add level data
             const level = item.data.level;
             htmlStr += addLine('Level', level);
+
             // type-specific data
             const typeHtml = await typeData(itemType, itemName);
             if (typeHtml === undefined) document.getElementById('wk-kanji-info').style.display = 'none'; // hide info box
             htmlStr += typeHtml == null ? '' : typeHtml;
+
             // fill in data
             document.getElementById('wk-kanji-info').innerHTML = htmlStr;
         };
 
-        // set kanji info box contents for first lesson item
+        // set info box contents for first item
         updateKanjiInfo();
 
-        // setup observer to change kanji info box contents for subsequent items
+        // setup observer to change info box contents for subsequent items
         var observer = new MutationObserver((mutations) => updateKanjiInfo());
         var config = { attributes: true, childList: true, characterData: true };
         observer.observe(characterElement, config);
