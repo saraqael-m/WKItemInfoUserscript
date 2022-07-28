@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.7
+// @version      1.8
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
@@ -28,7 +28,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
     const itemData = await wkof.ready('ItemData').then(() => wkof.ItemData.get_items());
 
     // find out if page is lesson, review, or word info
-    const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') || window.location.pathname.includes('extra_study') ? 'review' : 'info');
+    const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') ? 'review' : (window.location.pathname.includes('extra_study') ? 'extra_study' : 'info'));
 
     // "await existence of element"-function
     const awaitElement = (id) => new Promise(resolve => { // wait until character element exists
@@ -110,7 +110,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
             document.getElementById(itemType == 'r' ? 'information' : 'meaning').before(template.content.firstChild);
         }
 
-    } else { // lesson or review page
+    } else { // extra study, lesson, or review page
         // put loading and timeout screens (and all the others) above info box
         if (pageType === 'lesson') {
             awaitElement('loading-screen').then(e => e.style.zIndex = 10001);
@@ -125,8 +125,8 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
 
         // add kanji info box
         var template = document.createElement('template');
-        template.innerHTML = '<div id="wk-kanji-info" style="position: absolute;top: 50px;left: 20px;background-color: rgba(239, 239, 239, 0.75);border-radius: 3px;padding: 8px 12px;color: rgba(0, 0, 0, 0.7);font-size: .83em;display: grid;grid-template: 1fr / auto 1fr;z-index: 10000"></div>';
-        document.getElementById('progress-bar').after(template.content.firstChild);
+        template.innerHTML = '<div id="wk-kanji-info" style="position: absolute;top: 50px;left: 20px;background-color: rgba(239, 239, 239, 0.75);border-radius: 3px;padding: 8px 12px;color: rgba(0, 0, 0, 0.7);font-size: .83em;text-align: left;display: grid;grid-template: 1fr / auto 1fr;z-index: 10000"></div>';
+        await awaitElement('question').then(e => { e.prepend(template.content.firstChild); e.children[1].style.zIndex = 10001; });
 
         // update kanji info box function
         const updateKanjiInfo = async function () {
