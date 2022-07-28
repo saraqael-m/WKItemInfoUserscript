@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.5
+// @version      1.6
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
@@ -43,11 +43,12 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
     });
 
     // data get and format functions
-    const addLine = (label, value, infoPage) => '<span style="font-weight: ' + (infoPage ? 'normal' : 'bold') + ';">' + (infoPage ? '<p>' + label + '</p>' : label) + '</span><span style="padding-left: 10px;">' + (infoPage ? '<p>' + value + '</p>' : value) + '</span>';
+    const addLine = (label, value, infoPage) => infoPage ? '<div class="alternative-meaning"><h2>' + label + '</h2><p class="text-gray-700">' + value + '</p></div>' : '<span style="font-weight: bold;">' +  label + '</span><span style="padding-left: 10px;">' + value + '</span>';
     const typeData = async (itemType, itemName, infoPage = false) => {
         // type-specific data
         var htmlStr = '';
         var info, grade, top, jlpt, joyo, freq, num, strokes;
+        console.log(itemType, itemName)
         switch (itemType) {
             case 'k': // kanji
                 // get data (from kanjiapi.dev if not available in dict)
@@ -104,7 +105,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
 
         if (htmlStr !== null && htmlStr !== undefined) { // fill info in
             var template = document.createElement('template');
-            template.innerHTML = '<section id="info" class="remove-margin-bottom"><h2>Information</h2><div style="display: grid;grid-template: 1fr / auto 1fr;">' + htmlStr.replace('bold', 'normal') + '</div></section>';
+            template.innerHTML = '<section id="info" class="remove-margin-bottom"><h2>Information</h2>' + htmlStr + '</section>';
             document.getElementById(itemType == 'r' ? 'information' : 'meaning').before(template.content.firstChild);
         }
 
@@ -128,13 +129,13 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
 
         // update kanji info box function
         const updateKanjiInfo = async function () {
-            // get item type
-            const itemType = pageType === 'lesson' ? characterElement.parentNode.className[0].toLowerCase() : characterElement.className[0].toLowerCase();
             // show info box
             document.getElementById('wk-kanji-info').style.display = 'grid';
             // get item details
+            const itemType = pageType === 'lesson' ? characterElement.parentNode.className[0].toLowerCase() : characterElement.className[0].toLowerCase();
             const itemName = pageType === 'lesson' ? characterElement.innerHTML : characterElement.children[0].innerHTML;
-            const item = itemData.find(e => e.data.slug == itemName)
+            const item = itemData.find(e => e.data.slug == itemName || e.data.characters == itemName);
+            if (item === undefined) { document.getElementById('wk-kanji-info').style.display = 'none'; return; }
             var htmlStr = '';
             // add level data
             const level = item.data.level;
