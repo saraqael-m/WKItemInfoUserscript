@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.9
+// @version      1.10
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
@@ -149,7 +149,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
             // get item details
             const itemType = pageType === 'lesson' ? characterElement.parentNode.className[0].toLowerCase() : characterElement.className[0].toLowerCase();
             const itemName = pageType === 'lesson' ? characterElement.innerHTML : characterElement.children[0].innerHTML;
-            const item = itemData.find(e => e.data.slug == itemName || e.data.characters == itemName);
+            const item = itemData.find(e => (e.data.slug == itemName || e.data.characters == itemName) && e.object[0].toLowerCase() == itemType);
             if (item === undefined) { document.getElementById('wk-kanji-info').style.display = 'none'; return; }
             var htmlStr = '';
             // add level data
