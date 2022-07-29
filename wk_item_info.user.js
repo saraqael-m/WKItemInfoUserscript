@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.11
+// @version      1.12
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
@@ -23,17 +23,18 @@ const joyoKanji = '一丁七万丈三上下不与且世丘丙両並中串丸丹�
 const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', undefined, '中学ー大学', '人名用', '人名用'];
 
 (async () => {
-    // get item data from wkof
-    wkof.include('ItemData');
-    const itemData = await wkof.ready('ItemData').then(() => wkof.ItemData.get_items());
-
+    // setup wkof and get item data
+    const wkof = window.wkof;
+    if (wkof) wkof.include('ItemData');
+    else if (confirm('WaniKani Open Framework is not installed which this script requires to fetch level data for items.\nDo you want to be forwarded to the installation instructions?')) window.location.href = 'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549';
+    const itemData = wkof ? await wkof.ready('ItemData').then(() => wkof.ItemData.get_items()) : undefined;
+    
     // find out if page is lesson, review, or word info
     const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') ? 'review' : (window.location.pathname.includes('extra_study') ? 'extra_study' : 'info'));
-    console.log(pageType)
     // "await existence of element"-function
     const awaitElement = (id) => new Promise(resolve => { // wait until character element exists
         if (document.getElementById(id)) return resolve(document.getElementById(id));
-        const observer = new MutationObserver((mutations) => { // observer for existence
+        const observer = new MutationObserver(() => { // observer for existence
             if (document.getElementById(id)) {
                 resolve(document.getElementById(id));
                 observer.disconnect();
@@ -92,7 +93,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
                 break;
             case 'r': // radical
                 // radical names to slug
-                const realName = itemData.find(e => e.data.slug == itemName || e.data.characters == itemName).data.characters;
+                const realName = itemData === undefined ? itemName : itemData.find(e => e.data.slug == itemName || e.data.characters == itemName).data.characters;
                 if (!radicalInfo.hasOwnProperty(realName)) return null; // no information
                 // get data
                 info = radicalInfo[realName];
@@ -136,7 +137,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
         awaitElement('timeout').then(e => e.style.zIndex = 10001);
 
         // figure out the details of this sucker
-        const characterElement = await awaitElement('character');
+        const characterElement = pageType == 'lesson' ? await awaitElement('main-info') : await awaitElement('character');
 
         // add kanji info box
         var template = document.createElement('template');
@@ -149,14 +150,16 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
             // show info box
             document.getElementById('wk-kanji-info').style.display = 'grid';
             // get item details
-            const itemType = pageType === 'lesson' ? characterElement.parentNode.className[0].toLowerCase() : characterElement.className[0].toLowerCase();
-            const itemName = pageType === 'lesson' ? characterElement.innerHTML : characterElement.children[0].innerHTML;
-            const item = itemData.find(e => (e.data.slug == itemName || e.data.characters == itemName) && e.object[0].toLowerCase() == itemType);
+            const itemType = characterElement.className[0].toLowerCase();
+            const itemName = characterElement.children[0].innerHTML;
+            const item = itemData === undefined ? null : itemData.find(e => (e.data.slug == itemName || e.data.characters == itemName) && e.object[0].toLowerCase() == itemType);
             if (item === undefined) { document.getElementById('wk-kanji-info').style.display = 'none'; return; }
             var htmlStr = '';
             // add level data
-            const level = item.data.level;
-            htmlStr += addLine('Level', level);
+            if (item !== undefined && item !== null) { // check if wkof installed
+                const level = item.data.level;
+                htmlStr += addLine('Level', level);
+            }
 
             // type-specific data
             const typeHtml = await typeData(itemType, itemName);
@@ -171,8 +174,8 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
         updateKanjiInfo();
 
         // setup observer to change info box contents for subsequent items
-        var observer = new MutationObserver((mutations) => updateKanjiInfo());
-        var config = { attributes: true, childList: true, characterData: true };
-        observer.observe(characterElement, config);
+        var observer = new MutationObserver(() => updateKanjiInfo());
+        var config = { characterData: true, subtree: true };
+        observer.observe(characterElement.children[0], config);
     }
 })();
