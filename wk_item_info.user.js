@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.13
+// @version      1.14
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
@@ -28,7 +28,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
     if (wkof) wkof.include('ItemData');
     else if (confirm('WaniKani Open Framework is not installed which this script requires to fetch level data for items.\nDo you want to be forwarded to the installation instructions?')) window.location.href = 'https://community.wanikani.com/t/instructions-installing-wanikani-open-framework/28549';
     const itemData = wkof ? await wkof.ready('ItemData').then(() => wkof.ItemData.get_items()) : undefined;
-    
+
     // find out if page is lesson, review, or word info
     const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') ? 'review' : (window.location.pathname.includes('extra_study') ? 'extra_study' : 'info'));
     // "await existence of element"-function
@@ -173,7 +173,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
 
         // setup observer to change info box contents for subsequent items
         var observer = new MutationObserver(() => updateKanjiInfo());
-        var config = { characterData: true, subtree: true };
+        var config = { characterData: true, childList: true, subtree: true };
         observer.observe(characterElement.children[0], config);
     }
 })();
