@@ -1,7 +1,7 @@
 ﻿// ==UserScript==
 // @name         WaniKani Item Info
 // @namespace    wk-item-info
-// @version      1.12
+// @version      1.13
 // @description  Add more info to WaniKani's Kanji, Vocab, and Radicals!
 // @author       saraqael
 // @include     *://www.wanikani.com/radicals/*
