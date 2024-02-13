@@ -11,6 +11,7 @@
 // @match        https://www.wanikani.com/lesson/session*
 // @match        https://www.wanikani.com/review/session*
 // @match        https://www.wanikani.com/extra_study/session*
+// @match        https://www.wanikani.com/subject-lessons*
 // @grant        none
 // @require      https://greasyfork.org/scripts/430565-wanikani-item-info-injector/code/WaniKani%20Item%20Info%20Injector.user.js?version=1111117
 // ==/UserScript==
@@ -49,7 +50,7 @@ const gradeName = ['一年', '二年', '三年', '四年', '五年', '六年', u
     const itemData = wkof ? await wkof.ready('ItemData').then(() => wkof.ItemData.get_items()) : undefined;
 
     // find out if page is lesson, review, or word info
-    const pageType = window.location.pathname.includes('lesson') ? 'lesson' : (window.location.pathname.includes('review') ? 'review' : (window.location.pathname.includes('extra_study') ? 'extra_study' : 'info'));
+    const pageType = window.location.pathname.includes('review') ? 'review' : (window.location.pathname.includes('extra_study') ? 'extra_study' : (window.location.pathname.includes('subject') ? 'lesson' : 'info'));
     // "await existence of element"-function
     const awaitElement = (id) => new Promise(resolve => { // wait until character element exists
         if (document.getElementById(id)) return resolve(document.getElementById(id));
